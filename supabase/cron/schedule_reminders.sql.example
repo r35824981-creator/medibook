@@ -1,0 +1,38 @@
+-- MediBook reminder schedule (example, not applied automatically).
+--
+-- Prerequisites, run once in the SQL editor:
+--   create extension if not exists pg_cron;
+--   create extension if not exists pg_net;
+--   select vault.create_secret('<long-random-value>', 'medibook_cron_secret');
+--
+-- Then replace <project-ref> below and run this file. The send-reminders
+-- function accepts either this secret or the service role key as the bearer.
+-- It runs hourly and emails confirmed appointments happening tomorrow
+-- (Asia/Kolkata), recording each send in medibook.notifications_log.
+
+select cron.schedule(
+  'medibook-reminders',
+  '0 * * * *',
+  $$
+  select net.http_post(
+    url := 'https://<project-ref>.supabase.co/functions/v1/send-reminders',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (
+        select decrypted_secret
+        from vault.decrypted_secrets
+        where name = 'medibook_cron_secret'
+      )
+    ),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 30000
+  );
+  $$
+);
+
+-- To check the job:
+--   select * from cron.job where jobname = 'medibook-reminders';
+--   select * from cron.job_run_details order by start_time desc limit 10;
+
+-- To remove it:
+--   select cron.unschedule('medibook-reminders');
