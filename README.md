@@ -1,208 +1,243 @@
-# MediBook
+<div align="center">
 
-A hospital and clinic appointment system. Patients find doctors and book free slots, doctors manage their schedules and appointments, and admins manage doctors, departments and reports. Built as a B.Tech CSE final year project.
+# 🏥 MediBook
 
-## Features
+### Hospital & Clinic Appointment System
 
-- **Patients** — browse and search doctors by name or department, pick a date and slot, request an appointment, track upcoming and past visits, cancel, and edit their profile.
-- **Doctors** — set weekly availability and time off, confirm/reject/complete appointments, add visit notes, and manage their public profile and photo.
-- **Admins** — manage departments and doctors, oversee every appointment, view reports (appointments per day/doctor/department, busiest hour, cancellation rate) and check system settings.
-- **Guarantees** — a partial unique index makes double booking impossible; Row Level Security enforces every role boundary; free slots are calculated, never stored.
-- **Notifications** — booking, confirmation and cancellation emails through Resend, plus an hourly pg_cron job that sends one reminder about 24 hours before each confirmed appointment.
+Book doctor appointments online, manage schedules, and cut no-shows with automatic email reminders.
 
-## Stack
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Status](https://img.shields.io/badge/status-in%20development-orange)
 
-React 18 · TypeScript · Vite · Tailwind CSS · shadcn/ui · TanStack Query · React Hook Form + Zod · Supabase (Postgres, Auth, Realtime, Storage, Edge Functions) · Recharts · date-fns
+[Live Demo](#) · [Report a Bug](../../issues) · [Request a Feature](../../issues)
 
-All application tables live in the `medibook` schema, not `public`.
+</div>
 
-## Getting started
+---
+
+## 📖 About
+
+MediBook is a full-stack web application that replaces phone-based appointment booking in small hospitals and clinics. Patients find a doctor, pick a free time slot and book in a few clicks. Doctors manage their own availability and appointments. Admins manage doctors and departments and view reports.
+
+The system guarantees that **a time slot can never be double booked**, and it sends **automatic email reminders** 24 hours before each appointment.
+
+> Built as a B.Tech Computer Science final year project at GEC Autonomous College, Bhubaneswar.
+
+## ✨ Features
+
+### 👤 Patient
+- Register, log in and manage profile
+- Search doctors by name, department or specialization
+- View free slots for a chosen date and book instantly
+- View upcoming and past appointments, and cancel when needed
+- Email confirmation and reminder before the visit
+
+### 🩺 Doctor
+- Set weekly availability and slot duration
+- Block dates for leave or holidays
+- Confirm, reject or complete appointments
+- Add notes after a visit
+
+### 🛠️ Admin
+- Create and manage departments and doctor accounts
+- View all appointments
+- Reports: appointments per doctor and per day, cancellation rate, busiest hours
+- Dashboard with charts
+
+### ⚙️ System
+- Role-based access (patient, doctor, admin) enforced with Row Level Security
+- Database-level double-booking prevention
+- Live slot updates with Supabase Realtime
+- Scheduled reminder emails with `pg_cron` and Edge Functions
+- Responsive layout that works from 360px mobile screens up
+
+## 🧰 Tech Stack
+
+| Layer          | Technology                                   |
+| -------------- | -------------------------------------------- |
+| Frontend       | React 18, Vite, TypeScript                   |
+| Styling        | Tailwind CSS, shadcn/ui, Lucide icons        |
+| Routing        | React Router                                 |
+| Data fetching  | TanStack Query, supabase-js                  |
+| Forms          | React Hook Form, Zod                         |
+| Charts         | Recharts                                     |
+| Backend        | Supabase (Auth, Postgres, Realtime, Storage) |
+| Server code    | Supabase Edge Functions (Deno)               |
+| Scheduling     | pg_cron                                      |
+| Email          | Resend                                       |
+| Hosting        | Vercel (frontend), Supabase Cloud            |
+
+## 🏗️ How It Works
+
+```
+ React App ──► Supabase Auth ──► JWT with user role
+     │
+     ├──► Supabase Postgres (RLS policies decide who sees what)
+     │         └─ unique index prevents double booking
+     │
+     ├──► Supabase Realtime (live slot updates)
+     │
+ pg_cron (hourly) ──► Edge Function ──► Resend ──► Patient email
+```
+
+Free slots are **calculated** from the doctor's availability rules, time off and existing appointments, so no slot rows need to be stored or cleaned up.
+
+## 🗄️ Database Design
+
+| Table                | Purpose                                                        |
+| -------------------- | -------------------------------------------------------------- |
+| `profiles`           | Every user: name, phone, role (`patient`, `doctor`, `admin`)   |
+| `departments`        | Hospital departments                                           |
+| `doctors`            | Doctor details: department, specialization, fees, bio          |
+| `doctor_availability`| Weekly working hours and slot length per doctor                |
+| `doctor_time_off`    | Dates a doctor is unavailable                                  |
+| `appointments`       | Bookings with date, time, status and notes                     |
+| `notifications_log`  | Record of sent emails to prevent duplicate reminders           |
+
+**Appointment status flow:** `pending` → `confirmed` → `completed` (or `cancelled` / `rejected`)
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 20+ and npm
-- A Supabase project and the [Supabase CLI](https://supabase.com/docs/guides/cli) for database and function deploys
-- Optional: a [Resend](https://resend.com) API key for email
+- Node.js 18 or newer
+- A free [Supabase](https://supabase.com) account
+- A free [Resend](https://resend.com) account (for emails)
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
 
-### 1. Install
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/<your-username>/medibook.git
+cd medibook
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure the frontend
+### 3. Set up environment variables
 
-Create `.env.local` from `.env.example`:
+Create a `.env.local` file in the project root:
 
-```bash
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-# Set to true only after deploying send-appointment-email and configuring Resend.
-VITE_ENABLE_EMAILS=false
+```env
+VITE_SUPABASE_URL=your-supabase-project-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
-Only the anon key belongs in the frontend. Service role and Resend keys stay in Edge Function secrets.
+> Only the **anon** key goes in the frontend. Never put the service role key or the Resend key here.
 
-### 3. Apply the database migrations
-
-Migrations create the `medibook` schema, tables, indexes, RLS policies, the `doctor-photos` storage bucket, the realtime publication and seed departments.
+### 4. Set up the database
 
 ```bash
+supabase login
 supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-If the schema is not exposed through the API, run the migration's final `alter role authenticator set pgrst.db_schemas = ...` statement and reload PostgREST; the SQL already includes `notify pgrst, 'reload config'`.
+This applies all migration files in `supabase/migrations/`, including tables, the unique index and RLS policies.
 
-### 4. Create Edge Functions (optional until email is needed)
+### 5. Deploy the Edge Functions and set secrets
 
 ```bash
+supabase secrets set RESEND_API_KEY=your-resend-key CRON_SECRET=your-random-secret
 supabase functions deploy send-appointment-email
-supabase functions deploy send-reminders --no-verify-jwt
-supabase functions deploy admin-create-doctor
-
-supabase secrets set RESEND_API_KEY=re_...
-supabase secrets set REMINDER_FROM_EMAIL="MediBook <appointments@yourdomain.com>"
-supabase secrets set CRON_SECRET=<long-random-value>
+supabase functions deploy send-reminders
 ```
 
-Then set `VITE_ENABLE_EMAILS=true` and restart the dev server. Schedule reminders with `supabase/cron/schedule_reminders.sql.example`. See `supabase/functions/README.md` for details.
+### 6. Create the first admin
 
-### 5. Create the first admin
-
-Sign up normally, then promote the account from the SQL editor (only admins may change roles, so this one manual step bootstraps the system):
+Sign up through the app, then in the Supabase SQL editor run:
 
 ```sql
-update medibook.profiles set role = 'admin' where id = '<your-auth-user-id>';
+update profiles set role = 'admin' where id = '<your-user-id>';
 ```
 
-### 6. Run
+### 7. Run the app
 
 ```bash
 npm run dev
 ```
 
-The app is at http://localhost:5173.
+Open `http://localhost:5173`.
 
-## Scripts
+## 📜 Available Scripts
 
-| Command             | Purpose                                          |
-| ------------------- | ------------------------------------------------ |
-| `npm run dev`       | Start the Vite dev server                        |
-| `npm run build`     | Type-check the project and build to `dist/`      |
-| `npm run preview`   | Serve the production build locally               |
-| `npm run typecheck` | Type-check without emitting                      |
+| Command           | What it does                    |
+| ----------------- | ------------------------------- |
+| `npm run dev`     | Start the development server    |
+| `npm run build`   | Type-check and build for production |
+| `npm run preview` | Preview the production build    |
+| `npm run lint`    | Run the linter                  |
 
-There is no test runner configured yet.
-
-## Project structure
+## 📁 Project Structure
 
 ```
-src/
-  components/
-    layout/      AppShell, Sidebar, Topbar, protected route, auth layout
-    shared/      StatusBadge, EmptyState, ErrorState, MetricCard, dialogs
-    ui/          Generated shadcn/ui primitives (do not hand-edit)
-  features/
-    appointments/  API, hooks, realtime, status actions, notes dialog
-    auth/          AuthProvider, forms, role helpers
-    availability/  availability and time-off API, slot generation
-    departments/   department API, hooks, dialog
-    doctors/       doctor API, hooks, cards and dialogs
-    reports/       aggregation and report hooks
-  pages/         Route-level screens: landing, auth, patient/*, doctor/*, admin/*
-  lib/           Supabase client, query client, date/format helpers
-  types/         Shared types and generated database types
-supabase/
-  migrations/    Schema, indexes, RLS, storage, realtime, seed
-  functions/     Edge Functions and cron example
-context/         Project specs: overview, architecture, standards, UI, progress
+medibook/
+├── src/
+│   ├── pages/            # Route-level screens
+│   ├── features/         # auth, doctors, availability, appointments, reports
+│   ├── components/
+│   │   ├── ui/           # shadcn/ui components
+│   │   └── layout/       # Sidebar, navbar, dashboard shell
+│   ├── lib/              # Supabase client, query client, utilities
+│   └── types/            # Shared and generated types
+├── supabase/
+│   ├── migrations/       # SQL schema, indexes, RLS policies
+│   └── functions/        # Edge Functions (emails, reminders)
+├── docs/                 # Project context and design notes
+└── README.md
 ```
 
-## Data model
+## 🔒 Security
 
-```mermaid
-erDiagram
-    profiles ||--o| doctors : "is a"
-    departments ||--o{ doctors : "groups"
-    doctors ||--o{ doctor_availability : "has weekly rules"
-    doctors ||--o{ doctor_time_off : "blocks dates"
-    profiles ||--o{ appointments : "books as patient"
-    doctors ||--o{ appointments : "receives"
-    appointments ||--o{ notifications_log : "logs sends"
+- Row Level Security on every table: patients see only their own appointments, doctors only theirs, admins everything
+- Users cannot change their own role
+- Secrets live only in Edge Function environment variables
+- Double-booking is blocked by a database constraint, not just the UI
 
-    profiles {
-        uuid id PK
-        text full_name
-        text phone
-        text role "patient | doctor | admin"
-        timestamptz created_at
-        timestamptz updated_at
-    }
+## 🗺️ Roadmap
 
-    departments {
-        uuid id PK
-        text name UK
-        text description
-    }
+- [ ] Project setup (Vite, Tailwind, shadcn/ui, Supabase client)
+- [ ] Authentication and role-based routes
+- [ ] Departments and doctor management
+- [ ] Doctor availability and time off
+- [ ] Slot generation and booking
+- [ ] Patient and doctor dashboards
+- [ ] Realtime slot updates
+- [ ] Email notifications
+- [ ] 24-hour reminder job
+- [ ] Admin reports and charts
+- [ ] Deployment and documentation
 
-    doctors {
-        uuid id PK
-        uuid profile_id FK,UK
-        uuid department_id FK
-        text specialization
-        int fees
-        text bio
-        text photo_url
-        bool is_active
-    }
+**Future ideas:** SMS reminders, prescriptions and medical records, online payments, video consultation.
 
-    doctor_availability {
-        uuid id PK
-        uuid doctor_id FK
-        smallint weekday "0-6"
-        time start_time
-        time end_time
-        smallint slot_minutes
-    }
 
-    doctor_time_off {
-        uuid id PK
-        uuid doctor_id FK
-        date date
-        text reason
-    }
+## 🤝 Contributing
 
-    appointments {
-        uuid id PK
-        uuid patient_id FK
-        uuid doctor_id FK
-        date appointment_date
-        time start_time
-        time end_time
-        text status "pending | confirmed | completed | cancelled | rejected"
-        text reason
-        text doctor_notes
-    }
+This is an academic project, but suggestions are welcome. Open an issue to discuss a change, or fork the repo and submit a pull request.
 
-    notifications_log {
-        uuid id PK
-        uuid appointment_id FK
-        text type "booking | confirmation | cancellation | reminder"
-        timestamptz sent_at
-    }
-```
+## 👨‍💻 Author
 
-### Key invariants
+**Rakesh Rout**
+B.Tech CSE, GEC Autonomous College, Bhubaneswar
 
-1. **No double booking**: unique index on `(doctor_id, appointment_date, start_time)` where the status is not `cancelled` or `rejected`.
-2. **Authorization in RLS**, not just hidden buttons: patients see only their appointments, doctors only theirs, admins everything.
-3. **Slots are derived** from availability minus time off minus active appointments.
-4. **Reminders are idempotent** through the unique `(appointment_id, type)` on `notifications_log`.
-5. **Roles cannot be self-assigned**; a trigger rejects role changes from non-admins.
 
-## Deployment
+## 📄 License
 
-- Frontend: deploy to Vercel (Vite preset), with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_ENABLE_EMAILS` set in the project environment.
-- Backend: `supabase db push` for migrations, deploy the three Edge Functions, and add the pg_cron schedule from `supabase/cron/schedule_reminders.sql.example`.
-- Before a demo, book one appointment as a patient and confirm it as a doctor to verify RLS end to end.
+Distributed under the MIT License. See `LICENSE` for details.
+
+---
+
+<div align="center">
+
+⭐ If you find this project useful, consider giving it a star.
+
+</div>
